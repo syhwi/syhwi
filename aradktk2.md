@@ -30,7 +30,7 @@ KeyToKey公式からダウンロードして任意フォルダに展開
 
 以下をダウンロードして展開した中身をKeyToKeyフォルダ(中身だけをexeと同じ階層)に上書きコピー
 
-[[設定ファイル](https://drive.google.com/file/d/1CDrxQNX7IypOrfYrrMPvIrA7vApyvmdb/view)]
+[[設定ファイル](https://drive.google.com/file/d/1PeKrkfkK9T_V7LA4ZCUgOztqX37O7IFA/view?usp=sharing)]
 
 ## 設定
 
