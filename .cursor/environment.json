@@ -1,0 +1,17 @@
+{
+  "name": "syhwi KeyToKey docs",
+  "install": "./scripts/install.sh",
+  "terminals": [
+    {
+      "name": "docs-preview",
+      "command": "./.venv/bin/python scripts/preview.py --host 0.0.0.0 --port 8000",
+      "description": "Markdown documentation preview server (http://localhost:8000)"
+    }
+  ],
+  "ports": [
+    {
+      "name": "docs-preview",
+      "port": 8000
+    }
+  ]
+}
