@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>価格 × 為替 計算器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1a2421;
+      --muted: #5c6b66;
+      --line: rgba(26, 36, 33, 0.12);
+      --panel: rgba(255, 252, 247, 0.82);
+      --panel-solid: #fffcf7;
+      --accent: #0d7a6f;
+      --accent-deep: #065a52;
+      --warm: #c45c26;
+      --result: #0b3d38;
+      --danger: #a33b2b;
+      --shadow: 0 18px 50px rgba(20, 40, 36, 0.12);
+      --radius: 14px;
+      --font: "IBM Plex Sans JP", sans-serif;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--ink);
+      background:
+        linear-gradient(145deg, rgba(255, 248, 236, 0.88), rgba(214, 236, 230, 0.78)),
+        url("./bg.jpg") center / cover fixed;
+    }
+
+    .wrap {
+      width: min(980px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2.5rem 0 3.5rem;
+    }
+
+    header {
+      margin-bottom: 1.75rem;
+      animation: rise 0.55s ease both;
+    }
+
+    .brand {
+      font-size: clamp(1.85rem, 4vw, 2.55rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin: 0 0 0.55rem;
+    }
+
+    .brand span {
+      color: var(--accent);
+    }
+
+    .lede {
+      margin: 0;
+      max-width: 36rem;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin: 1.35rem 0 1rem;
+      animation: rise 0.65s ease both;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: 0;
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button:active { transform: translateY(1px); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(13, 122, 111, 0.25);
+    }
+
+    .btn-primary:hover { background: var(--accent-deep); }
+
+    .btn-ghost {
+      background: rgba(255, 252, 247, 0.9);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .btn-ghost:hover { background: #fff; }
+
+    .panel {
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: rise 0.75s ease both;
+    }
+
+    .table-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    th, td {
+      padding: 0.85rem 0.9rem;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+    }
+
+    th {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    tbody tr {
+      transition: background 0.15s ease;
+    }
+
+    tbody tr:hover {
+      background: rgba(13, 122, 111, 0.04);
+    }
+
+    .idx {
+      width: 2.2rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      font: inherit;
+      font-size: 0.95rem;
+      color: var(--ink);
+      background: var(--panel-solid);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.55rem 0.65rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input:focus {
+      border-color: rgba(13, 122, 111, 0.55);
+      box-shadow: 0 0 0 3px rgba(13, 122, 111, 0.12);
+    }
+
+    input[type="number"] {
+      font-family: var(--mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .converted {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--result);
+      white-space: nowrap;
+    }
+
+    .converted.empty { color: var(--muted); font-weight: 500; }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.85rem;
+      margin-top: 1.1rem;
+      animation: rise 0.85s ease both;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .stat .label {
+      margin: 0 0 0.35rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .stat .value {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: clamp(1.15rem, 2.5vw, 1.45rem);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--result);
+    }
+
+    .stat.total .value { color: var(--warm); }
+
+    .output {
+      margin-top: 1.1rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.1rem 1.2rem;
+      animation: rise 0.95s ease both;
+    }
+
+    .output-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.7rem;
+    }
+
+    .output-head h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    #report {
+      margin: 0;
+      white-space: pre-wrap;
+      font-family: var(--mono);
+      font-size: 0.86rem;
+      line-height: 1.65;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.55);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      border: 1px dashed rgba(26, 36, 33, 0.18);
+      min-height: 8rem;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 1.4rem;
+      transform: translateX(-50%) translateY(120%);
+      background: var(--ink);
+      color: #fff;
+      padding: 0.7rem 1.1rem;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      z-index: 20;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .summary { grid-template-columns: 1fr; }
+      .wrap { width: min(980px, calc(100% - 1.25rem)); padding-top: 1.5rem; }
+      th, td { padding: 0.7rem 0.65rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1 class="brand">価格<span>×</span>為替 計算器</h1>
+      <p class="lede">
+        アイテムごとに価格と交換レートを入力すると、換算額と合計をすぐ出します。
+        数量も掛けられます。結果は下のテキストにまとめてコピーできます。
+      </p>
+    </header>
+
+    <div class="toolbar">
+      <button type="button" class="btn-primary" id="recalcBtn">再計算</button>
+      <button type="button" class="btn-ghost" id="clearBtn">入力をクリア</button>
+      <button type="button" class="btn-ghost" id="sampleBtn">サンプルを入れる</button>
+      <button type="button" class="btn-ghost" id="copyBtn">結果をコピー</button>
+    </div>
+
+    <div class="panel">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>アイテム名</th>
+              <th>価格</th>
+              <th>交換レート</th>
+              <th>数量</th>
+              <th>換算額</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="stat">
+        <p class="label">有効アイテム数</p>
+        <p class="value" id="countValue">0</p>
+      </div>
+      <div class="stat">
+        <p class="label">総数量</p>
+        <p class="value" id="qtyValue">0</p>
+      </div>
+      <div class="stat total">
+        <p class="label">合計換算額</p>
+        <p class="value" id="totalValue">0</p>
+      </div>
+    </div>
+
+    <section class="output" aria-labelledby="report-title">
+      <div class="output-head">
+        <h2 id="report-title">計算結果</h2>
+        <button type="button" class="btn-ghost" id="copyBtn2">コピー</button>
+      </div>
+      <pre id="report"></pre>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const ITEM_COUNT = 5;
+    const rowsEl = document.getElementById("rows");
+    const reportEl = document.getElementById("report");
+    const toastEl = document.getElementById("toast");
+
+    const samples = [
+      { name: "アイテム A", price: 12.5, rate: 148.2, qty: 1 },
+      { name: "アイテム B", price: 39.99, rate: 148.2, qty: 2 },
+      { name: "アイテム C", price: 8, rate: 1.42, qty: 5 },
+      { name: "アイテム D", price: 2500, rate: 0.0091, qty: 1 },
+      { name: "アイテム E", price: 99, rate: 148.2, qty: 1 },
+    ];
+
+    function formatNumber(n) {
+      if (!Number.isFinite(n)) return "—";
+      return n.toLocaleString("ja-JP", {
+        maximumFractionDigits: 6,
+        minimumFractionDigits: 0,
+      });
+    }
+
+    function buildRows() {
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < ITEM_COUNT; i++) {
+        const tr = document.createElement("tr");
+        tr.dataset.index = String(i);
+        tr.innerHTML = `
+          <td class="idx">${i + 1}</td>
+          <td><input type="text" data-field="name" placeholder="アイテム ${i + 1}" autocomplete="off" /></td>
+          <td><input type="number" data-field="price" inputmode="decimal" step="any" min="0" placeholder="0" /></td>
+          <td><input type="number" data-field="rate" inputmode="decimal" step="any" min="0" placeholder="0" /></td>
+          <td><input type="number" data-field="qty" inputmode="decimal" step="any" min="0" value="1" /></td>
+          <td><span class="converted empty" data-field="converted">—</span></td>
+        `;
+        frag.appendChild(tr);
+      }
+      rowsEl.appendChild(frag);
+    }
+
+    function readRow(tr) {
+      const get = (field) => tr.querySelector(`[data-field="${field}"]`);
+      const name = (get("name").value || "").trim() || `アイテム ${Number(tr.dataset.index) + 1}`;
+      const price = Number(get("price").value);
+      const rate = Number(get("rate").value);
+      const qtyRaw = get("qty").value;
+      const qty = qtyRaw === "" ? 1 : Number(qtyRaw);
+      const hasPrice = get("price").value !== "" && Number.isFinite(price);
+      const hasRate = get("rate").value !== "" && Number.isFinite(rate);
+      const hasQty = Number.isFinite(qty);
+      const active = hasPrice && hasRate && hasQty;
+      const converted = active ? price * rate * qty : NaN;
+      return { name, price, rate, qty, active, converted, el: get("converted") };
+    }
+
+    function recalculate() {
+      const items = [...rowsEl.querySelectorAll("tr")].map(readRow);
+      let count = 0;
+      let qtySum = 0;
+      let total = 0;
+      const lines = [];
+
+      items.forEach((item, i) => {
+        if (item.active) {
+          count += 1;
+          qtySum += item.qty;
+          total += item.converted;
+          item.el.textContent = formatNumber(item.converted);
+          item.el.classList.remove("empty");
+          lines.push(
+            `${i + 1}. ${item.name}\n` +
+            `   価格 ${formatNumber(item.price)} × レート ${formatNumber(item.rate)} × 数量 ${formatNumber(item.qty)}\n` +
+            `   = ${formatNumber(item.converted)}`
+          );
+        } else {
+          item.el.textContent = "—";
+          item.el.classList.add("empty");
+        }
+      });
+
+      document.getElementById("countValue").textContent = formatNumber(count);
+      document.getElementById("qtyValue").textContent = formatNumber(qtySum);
+      document.getElementById("totalValue").textContent = formatNumber(total);
+
+      const stamp = new Date().toLocaleString("ja-JP");
+      reportEl.textContent = lines.length
+        ? `【価格 × 為替 計算結果】\n作成: ${stamp}\n\n${lines.join("\n\n")}\n\n--------------------\n合計換算額: ${formatNumber(total)}\n有効アイテム: ${count} / ${ITEM_COUNT}\n総数量: ${formatNumber(qtySum)}`
+        : `【価格 × 為替 計算結果】\n作成: ${stamp}\n\nまだ計算できる入力がありません。\n各行に「価格」と「交換レート」を入れてください。`;
+    }
+
+    function clearInputs() {
+      rowsEl.querySelectorAll("input").forEach((input) => {
+        if (input.dataset.field === "qty") input.value = "1";
+        else input.value = "";
+      });
+      recalculate();
+      showToast("入力をクリアしました");
+    }
+
+    function fillSample() {
+      rowsEl.querySelectorAll("tr").forEach((tr, i) => {
+        const s = samples[i];
+        tr.querySelector('[data-field="name"]').value = s.name;
+        tr.querySelector('[data-field="price"]').value = String(s.price);
+        tr.querySelector('[data-field="rate"]').value = String(s.rate);
+        tr.querySelector('[data-field="qty"]').value = String(s.qty);
+      });
+      recalculate();
+      showToast("サンプルを入れました");
+    }
+
+    async function copyReport() {
+      const text = reportEl.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("結果をコピーしました");
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(reportEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        showToast("テキストを選択しました（Ctrl+C）");
+      }
+    }
+
+    let toastTimer;
+    function showToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1800);
+    }
+
+    buildRows();
+    recalculate();
+
+    rowsEl.addEventListener("input", recalculate);
+    document.getElementById("recalcBtn").addEventListener("click", () => {
+      recalculate();
+      showToast("再計算しました");
+    });
+    document.getElementById("clearBtn").addEventListener("click", clearInputs);
+    document.getElementById("sampleBtn").addEventListener("click", fillSample);
+    document.getElementById("copyBtn").addEventListener("click", copyReport);
+    document.getElementById("copyBtn2").addEventListener("click", copyReport);
+  </script>
+</body>
+</html>
